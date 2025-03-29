@@ -69,7 +69,7 @@ def main():
         # Travel through the columns to check for allowed moves
         allowedMoves = [col for col in range(7) if board[0][col] == 'O']    #If top row is full, column cannot be added to
         if not allowedMoves:
-            raise ValueError("No valid moves left, game is a draw")     #Check for errors if no allowed moves
+            raise ValueError("No valid moves at onset, board is already full")     #Check for errors if no allowed moves
     except Exception as e:
         print(f"Not able to travel through array: {e}")
         sys.exit(1)
@@ -94,6 +94,23 @@ def main():
         printBoard(board)  # Print the updated board
     else:
         print(f"Error: Could not place piece in column {chosen_move + 1}")
-    
+    while True:
+        allowedMoves = [col for col in range(7) if board[0][col] == 'O']    #check for allowed moves every move
+        if not allowedMoves:
+            print("Game Over: No Winner")
+            break
+        chosen_move = random.choice(allowedMoves)
+        #alternates players
+        if current_player == 'R':
+            current_player = 'Y'
+        else:
+            current_player = "R"
+
+        if dropPiece(board, chosen_move, current_player):
+            print(f"Player {current_player} chooses column {chosen_move + 1}")
+            printBoard(board)
+        else:
+            print(f"Error Coult not place piece in column {chosen_move + 1}")
+        
 if __name__ == "__main__":
     main()
