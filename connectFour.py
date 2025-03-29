@@ -128,25 +128,3 @@ def main():
             current_player = "R"
 if __name__ == "__main__":
     main()
-
-'''
-Things done:
-    -Initalized from command line, taking in appropriate arguments
-    -loads game from text file, as well as starting player
-    -plays a game randomly, alternating between the two players (R and Y)
-    -correctly (if inefficiently) tests the board for win state, ends game and reports winner once found
-        -aka Algorithm 1 works
-Things to do:
-    Submission 1:
-        -Comment and clean up code
-            -Maybe get the things from main into methods (necessary for Submission 2)
-    Submission 2:
-        -Set up Verbose, Brief, None controls
-        -Change from UR being only valid, to allowing for the 3 algorithms
-        -Algorithm 2: Pure Monte Carlo Game Search (PMCGS)
-        -Algorithm 3: Upper Confidence bound for Trees (UCT)
-        -Part II: Algorithm Tournaments and Evaluation
-        -Report
-            -Group Member contributions
-            -results from part 2       
-'''
