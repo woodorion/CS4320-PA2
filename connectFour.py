@@ -67,10 +67,9 @@ def main():
     printBoard(initialBoard)
     try:
         # Travel through the columns to check for allowed moves
-        for col in range(7): 
-            # If 0 then its not allowed  
-            if board[0][col] == 'O':
-                allowedMoves.append(col)  
+        allowedMoves = [col for col in range(7) if board[0][col] == 'O']    #If top row is full, column cannot be added to
+        if not allowedMoves:
+            raise ValueError("No valid moves left, game is a draw")     #Check for errors if no allowed moves
     except Exception as e:
         print(f"Not able to travel through array: {e}")
         sys.exit(1)
