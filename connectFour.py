@@ -1,6 +1,6 @@
 # Alan Robles ID: 80647127
 # Orion Wood ID: 80537518
-# name name ID: 
+# Jesus Ortega ID: 80421772 
 import sys
 import random
 
@@ -10,14 +10,37 @@ def printBoard(board):
         print(' '.join(row))
     print('-' * 15)  # Divider between states
 
+#if valid, drops down piece to proper spot (based on board)
+#if not valid, just returns false
+#if placed in an if statement, doubles as both dropping down piece to proper place, and verifying placement validity
 def dropPiece(board, col, symbol):
-    # Start checking from the bottom row (row 5) to the top (row 0)
+    # Start checking from the bottom row to the top
     for row in reversed(range(6)):
         if board[row][col] == 'O':  # Check for an empty spot
-            board[row][col] = symbol  # Place the piece
+            board[row][col] = symbol  # Place the piece in the lowest empty spot, simulating a "drop"
             return True
     return False  # Column is full
-
+ 
+#checks the entire board every time for possible wins for the current player
+#inefficient, but easier to implement than a local search, will likely optimize later
+def winLogic(board, symbol):
+    for row in range(6):    #check horizontal lines (L to R)
+        for col in range(4):
+            if all(board[row][col+i] == symbol for i in range(4)):
+                return True
+    for col in range(7):    #check vertical lines (T to B)
+        for row in range(3):
+            if all(board[row + i][col] == symbol for i in range(4)):
+                return True
+    for row in range(3,6):  #check diagonals (BL to TR)
+        for col in range (4):
+            if all(board[row - i][col + i] == symbol for i in range(4)):
+                return True
+    for row in range(3,6):  #check other diagonals (BR to TL)
+        for col in range(3,7):
+            if all(board[row - i][col - i] == symbol for i in range(4)):
+                return True
+    return False    #if none found, return false
 
 
 def main():
@@ -79,38 +102,51 @@ def main():
         print("Index issue moves not allowed.")
         sys.exit(1)
     
-    # Use the UR algorithm
-    try:
-        # random choice to check for a random number
-        chosen_move = random.choice(allowedMoves)
-    except Exception as e:
-        print(f"selected move error: {e}")
-        sys.exit(1)
-    #place chosen_move to the board
-    # Choose a valid move
-    # Drop the piece into the selected column
-    if dropPiece(board, chosen_move, current_player):
-        print(f"Player {current_player} chooses column {chosen_move + 1}")
-        printBoard(board)  # Print the updated board
-    else:
-        print(f"Error: Could not place piece in column {chosen_move + 1}")
+    # Use the UR algorithm 
     while True:
         allowedMoves = [col for col in range(7) if board[0][col] == 'O']    #check for allowed moves every move
         if not allowedMoves:
             print("Game Over: No Winner")
             break
-        chosen_move = random.choice(allowedMoves)
-        #alternates players
+        chosen_move = random.choice(allowedMoves) #Chooses random valid move 
+
+        #if selected column is not full (aka piece is dropped down correctly)
+        if dropPiece(board, chosen_move, current_player):
+            if winLogic(board, current_player):     #checks if there is a 4 in a row for the current player
+                print(f"FINAL Move Selected: {chosen_move + 1}")
+                print(f"Player {current_player} wins!")
+                printBoard(board)
+                break
+            print(f"Player {current_player} chooses column {chosen_move + 1}")
+            #printBoard(board)  #only used for testing purposes
+        else:
+            print(f"Error Coult not place piece in column {chosen_move + 1}")
+        #alternates players (always assumed R if current_player somehow isn't R or Y)
         if current_player == 'R':
             current_player = 'Y'
         else:
             current_player = "R"
-
-        if dropPiece(board, chosen_move, current_player):
-            print(f"Player {current_player} chooses column {chosen_move + 1}")
-            printBoard(board)
-        else:
-            print(f"Error Coult not place piece in column {chosen_move + 1}")
-        
 if __name__ == "__main__":
     main()
+
+'''
+Things done:
+    -Initalized from command line, taking in appropriate arguments
+    -loads game from text file, as well as starting player
+    -plays a game randomly, alternating between the two players (R and Y)
+    -correctly (if inefficiently) tests the board for win state, ends game and reports winner once found
+        -aka Algorithm 1 works
+Things to do:
+    Submission 1:
+        -Comment and clean up code
+            -Maybe get the things from main into methods (necessary for Submission 2)
+    Submission 2:
+        -Set up Verbose, Brief, None controls
+        -Change from UR being only valid, to allowing for the 3 algorithms
+        -Algorithm 2: Pure Monte Carlo Game Search (PMCGS)
+        -Algorithm 3: Upper Confidence bound for Trees (UCT)
+        -Part II: Algorithm Tournaments and Evaluation
+        -Report
+            -Group Member contributions
+            -results from part 2       
+'''
