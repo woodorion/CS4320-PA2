@@ -1,10 +1,28 @@
 # Alan Robles ID: 80647127
+# Orion Wood ID: 80537518
+# name name ID: 
 import sys
 import random
 
+#Method to print board, for testing purposes
+def printBoard(board):
+    for row in board:
+        print(' '.join(row))
+    print('-' * 15)  # Divider between states
+
+def dropPiece(board, col, symbol):
+    # Start checking from the bottom row (row 5) to the top (row 0)
+    for row in reversed(range(6)):
+        if board[row][col] == 'O':  # Check for an empty spot
+            board[row][col] = symbol  # Place the piece
+            return True
+    return False  # Column is full
+
+
+
 def main():
     # Checking the command line arguments using the argv functions
-    # to make sure there is a total of 4, nothing less and nothing more 
+    # to make sure there is a total of 4, nothing less and nothing more (might be worth having it have default arguements otherwise, but that's extra)
     if len(sys.argv) != 4:
         print("Number of arguments does not match")
         sys.exit(1) # Exit the program 
@@ -34,7 +52,7 @@ def main():
         # Get the symbol for the currrent player
         current_player = lines[1]
         # Create a board making sure there is only 6 rows
-        board = lines[2:8]  
+        board = [list(line) for line in lines[2:8]]  
         if len(board) != 6:
             raise ValueError("You need 6 rows for the board.")
     except Exception as e:
@@ -44,12 +62,15 @@ def main():
     # Start array with nothing to check allowed moves; 
     # if it is zero then its illegal
     allowedMoves = []
+    initialBoard = board
+    print("Initial Board:") #print initial board for comparison
+    printBoard(initialBoard)
     try:
         # Travel through the columns to check for allowed moves
         for col in range(7): 
             # If 0 then its not allowed  
             if board[0][col] == 'O':
-                allowedMoves.append(col + 1)  
+                allowedMoves.append(col)  
     except Exception as e:
         print(f"Not able to travel through array: {e}")
         sys.exit(1)
@@ -66,8 +87,14 @@ def main():
     except Exception as e:
         print(f"selected move error: {e}")
         sys.exit(1)
+    #place chosen_move to the board
+    # Choose a valid move
+    # Drop the piece into the selected column
+    if dropPiece(board, chosen_move, current_player):
+        print(f"Player {current_player} chooses column {chosen_move + 1}")
+        printBoard(board)  # Print the updated board
+    else:
+        print(f"Error: Could not place piece in column {chosen_move + 1}")
     
-    print(f"Final Move : {chosen_move}")
-
 if __name__ == "__main__":
     main()
