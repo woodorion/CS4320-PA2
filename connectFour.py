@@ -4,6 +4,18 @@
 import sys
 import random
 
+#Uniform Random Method
+def UR_Algorithm(currentPlayer, gameBoard):
+    allowedMoved = []
+    try:
+        # Travel through the columns to check for allowed moves
+        allowedMoves = [col for col in range(7) if board[0][col] == 'O']    #If top row is full, column cannot be added to
+        if not allowedMoves:
+            raise ValueError("No valid moves at onset, board is already full")     #Check for errors if no allowed moves
+    except Exception as e:
+        print(f"Not able to travel through array: {e}")
+        sys.exit(1)
+        
 #Method to print board, for testing purposes
 def printBoard(board):
     for row in board:
@@ -42,7 +54,6 @@ def winLogic(board, symbol):
                 return True
     return False    #if none found, return false
 
-
 def main():
     # Checking the command line arguments using the argv functions
     # to make sure there is a total of 4, nothing less and nothing more (might be worth having it have default arguements otherwise, but that's extra)
@@ -70,14 +81,25 @@ def main():
         # Get the type of algorithm using the first line from the command line
         algorithm = lines[0]
         # Check if we are using the UR algorithm
+        '''#Starting code here to choose which algorithm
+        if algorithm == "UR":
+            run UR algorithm
+        if algorithm == "PMCGS":
+            run PMCGS algorithm
+        if algorithm == "UCT":
+            run UCT algorithm
+        -once these are somewhat set up, can change the below if statement to be if not UR, PMCGS, or UCT
+        '''
+        # Create a board making sure there is only 6 rows
+        board = [list(line) for line in lines[2:8]]
+        if len(board) != 6:
+            raise ValueError("You need 6 rows for the board")
+        UR_Algorithm(lines[1], board)
+        
         if algorithm != "UR":
             raise ValueError(f"Wrong Algorithm: {algorithm}")
         # Get the symbol for the currrent player
         current_player = lines[1]
-        # Create a board making sure there is only 6 rows
-        board = [list(line) for line in lines[2:8]]  
-        if len(board) != 6:
-            raise ValueError("You need 6 rows for the board.")
     except Exception as e:
         print(f"Not reading file: {e}")
         sys.exit(1)
