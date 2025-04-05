@@ -184,6 +184,7 @@ def main():
     
     
 if __name__ == "__main__":
+<<<<<<< Part2
     main()
 
 '''
@@ -205,3 +206,6 @@ Things to do:
             -Group Member contributions
             -results from part 2       
 '''
+=======
+    main()
+>>>>>>> main
