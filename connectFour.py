@@ -23,9 +23,11 @@ def gameSetup(gameBoard):
         sys.exit(1)
     return allowedMoves
 
-def UR_Algorithm(current_player, gameBoard, verbosity):
+def UR_Algorithm(current_player, gameBoard, verbosity, simYN):
     #Uniform Random Method - takes in the current player, game board, and verbosity level
     #runs through board, till game is over (either win or draw)
+    #functionality for if running by itself, as as part of simulation (mainly print statement differences)
+    initialPlayer = current_player #Keep track of the starting player, for PMCGS
     allowedMoves = gameSetup(gameBoard)    #Check if game is set up correctly
     
     # Use the UR algorithm 
@@ -33,18 +35,22 @@ def UR_Algorithm(current_player, gameBoard, verbosity):
         if not allowedMoves:
             if verbosity != "None":
                 print("Game Over: No Winner")
-            break
+            if simYN and verbosity != "None":
+                print("TERMINAL NODE VALUE: 0")
+            return 0    #Game is over, no winner
         
         chosen_move = random.choice(allowedMoves) #Chooses random valid move 
 
         #if selected column is not full (aka piece is dropped down correctly)
         if dropPiece(gameBoard, chosen_move, current_player):
             if winLogic(gameBoard, current_player):     #checks if there is a 4 in a row for the current player
-                if verbosity != "None":
+                if verbosity != "None" and not simYN:
                     print(f"FINAL Move Selected: {chosen_move + 1}")
                     print(f"Player {current_player} wins!")
                     printBoard(gameBoard)
-                    break
+                if simYN and verbosity != "None":
+                    print(f"TERMINAL NODE VALUE: {1 if current_player == initialPlayer else -1}")
+                return 1 if current_player == initialPlayer else -1    #return 1 if original player wins, -1 if other player wins
             if verbosity == "Testing":
                 print(f"Player {current_player} chooses column {chosen_move + 1}")
                 printBoard(gameBoard)  #only used for testing purposes
@@ -55,8 +61,46 @@ def UR_Algorithm(current_player, gameBoard, verbosity):
         #alternates players (always assumed R if current_player somehow isn't R or Y)
         current_player = 'Y' if current_player == 'R' else 'R'
 
-def PMCGS_Algorithm(current_player, gameBoard, verbosity, numSimulations):
+        if verbosity == "Verbose" and simYN:
+            print(f"Move selected: {chosen_move + 1}")
+
+def PMCGS_Algorithm(current_player, gameBoard, verbosity, simulations):
     allowedMoves = gameSetup(gameBoard)    #Check if game is set up correctly
+    # Track win and simulation counts for each move
+    moveStats = {col: {"wi":0, "ni": 0} for col in range(7)}
+
+    for sim in range (simulations):
+        #Select a random valid move to start the simulation
+        allowedMoves = [col for col in range(7) if gameBoard[0][col] == 'O']
+        if not allowedMoves:
+            print("Game Over: No Winner")
+            return
+        chosen_move = random.choice(allowedMoves)
+        if moveStats[chosen_move]["ni"] == 0 and verbosity == "Verbose":
+            print("NODE ADDED")
+
+        # Copy the board to simulate the game
+        sim_board = [row[:] for row in gameBoard]
+
+        # Drop the initial piece for the current player
+        dropPiece(sim_board, chosen_move, current_player)
+        # Simulate a game from the chosen move
+        result = UR_Algorithm(current_player, sim_board, verbosity, True)  # Run the simulation, randomly
+
+        # Update move statistics
+        moveStats[chosen_move]["wi"] += (1 if result == 1 else 0)
+        moveStats[chosen_move]["ni"] += 1
+
+        #Verbose output for each simulation
+        if verbosity == "Verbose":
+            print(f"wi: {moveStats[chosen_move]['wi']}")
+            print(f"ni: {moveStats[chosen_move]['ni']}")
+            print(f"Move selected: {chosen_move + 1}")
+    # Select the move with the highest win rate wi/ni
+    best_move = max(moveStats, key=lambda x: (moveStats[x]["wi"] / moveStats[x]["ni"]) if moveStats[x]["ni"] > 0 else -1)
+
+    print(f"Best Move: {best_move + 1}")
+    return best_move
 
 def printBoard(board):
     #Method to print board, for testing/reporting purposes
@@ -108,7 +152,7 @@ def main():
     input_file = sys.argv[1]
     verbosity = sys.argv[2]     
     # Algorithm specific parameter
-    algorithm_param = sys.argv[3] 
+    algorithm_param = int(sys.argv[3]) 
 
     # Read the file and handle errors
     try:
@@ -126,7 +170,7 @@ def main():
 
         # Choose the Algorithm
         if algorithm == "UR":
-            UR_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity)
+            UR_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, False)
         elif algorithm == "PMCGS":
             PMCGS_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, algorithm_param)
         #elif algorithm == "UCT":
