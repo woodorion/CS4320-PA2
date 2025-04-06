@@ -102,6 +102,68 @@ def PMCGS_Algorithm(current_player, gameBoard, verbosity, simulations):
     print(f"Best Move: {best_move + 1}")
     return best_move
 
+def UCT_Algorithm(current_player, gameBoard, verbosity, simulations):
+    allowedMoves = gameSetup(gameBoard)
+    moveStats = {col: {"wi": 0, "ni": 0} for col in range(7)}
+    initial_player = current_player  # store root player
+    C = 1.41  # Exploration constant for the algorithm since you use square root of 2
+
+    for sim in range(simulations):
+        allowedMoves = [col for col in range(7) if gameBoard[0][col] == 'O']
+        if not allowedMoves:
+            print("Game Over: No Winner")
+            return
+        
+        # Check if node is not a leaf: all allowed moves have been visited at least once.
+        if all(moveStats[col]["ni"] > 0 for col in allowedMoves):
+            total_simulations = sum(moveStats[col]["ni"] for col in allowedMoves)
+            ucb_values = {}
+            for col in allowedMoves:
+                ni = moveStats[col]["ni"]
+                wi = moveStats[col]["wi"]
+                avg_value = wi / ni
+                exploration_term = C * math.sqrt(math.log(total_simulations) / ni)
+                # Assume that the root player is maximizing.
+                ucb = avg_value + exploration_term
+                ucb_values[col] = ucb
+            if verbosity == "Verbose":
+                for col in range(7):
+                    if col in ucb_values:
+                        print(f"V{col+1}: {ucb_values[col]:.2f}")
+                    else:
+                        print(f"V{col+1}: Null")
+            chosen_move = max(ucb_values, key=ucb_values.get)
+            if verbosity == "Verbose":
+                print(f"Move selected: {chosen_move + 1}")
+        else:
+            # If some allowed moves are unvisited, select one at random and indicate a new node.
+            chosen_move = random.choice(allowedMoves)
+            if moveStats[chosen_move]["ni"] == 0 and verbosity == "Verbose":
+                print("NODE ADDED")
+        
+        # Copy board and simulate from the chosen move.
+        sim_board = [row[:] for row in gameBoard]
+        dropPiece(sim_board, chosen_move, current_player)
+        result = UR_Algorithm(current_player, sim_board, verbosity, True)
+        moveStats[chosen_move]["wi"] += (1 if result == 1 else 0)
+        moveStats[chosen_move]["ni"] += 1
+
+        if verbosity == "Verbose":
+            print("Updated values:")
+            print(f"wi: {moveStats[chosen_move]['wi']}")
+            print(f"ni: {moveStats[chosen_move]['ni']}")
+    
+    # After all simulations, select the best move based on the direct estimate (wi/ni)
+    for col in range(7):
+        if moveStats[col]["ni"] > 0:
+            value = moveStats[col]["wi"] / moveStats[col]["ni"]
+            print(f"Column {col+1}: {value:.2f}")
+        else:
+            print(f"Column {col+1}: Null")
+    best_move = max(moveStats, key=lambda col: (moveStats[col]["wi"] / moveStats[col]["ni"]) if moveStats[col]["ni"] > 0 else -float('inf'))
+    print(f"FINAL Move selected: {best_move + 1}")
+    return best_move
+
 def printBoard(board):
     #Method to print board, for testing/reporting purposes
     for row in board:
@@ -173,8 +235,8 @@ def main():
             UR_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, False)
         elif algorithm == "PMCGS":
             PMCGS_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, algorithm_param)
-        #elif algorithm == "UCT":
-            #run UCT algorithm    
+        elif algorithm == "UCT":
+            UCT_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, algorithm_param)   
         else:
             raise ValueError(f"Wrong Algorithm: {algorithm}")
     except Exception as e:
@@ -184,28 +246,4 @@ def main():
     
     
 if __name__ == "__main__":
-<<<<<<< Part2
     main()
-
-'''
-Things done:
-    -Initalized from command line, taking in appropriate arguments
-    -loads game from text file, as well as starting player
-    -plays a game randomly, alternating between the two players (R and Y)
-    -correctly (if inefficiently) tests the board for win state, ends game and reports winner once found
-        -aka Algorithm 1 works
-    -Moved UR algorithm to its own function, and implemented it in the main function
-Things to do:
-    Submission 2:
-        -Set up Verbose, Brief, None controls
-        -Change from UR being only valid, to allowing for the 3 algorithms
-        -Algorithm 2: Pure Monte Carlo Game Search (PMCGS)
-        -Algorithm 3: Upper Confidence bound for Trees (UCT)
-        -Part II: Algorithm Tournaments and Evaluation
-        -Report
-            -Group Member contributions
-            -results from part 2       
-'''
-=======
-    main()
->>>>>>> main
