@@ -3,6 +3,7 @@
 # Jesus Ortega ID: 80421772 
 import sys
 import random
+import math
 
 def gameSetup(gameBoard):
     #Checks if game is set up correctly, returns initial allowed moves if valid
@@ -33,9 +34,9 @@ def UR_Algorithm(current_player, gameBoard, verbosity, simYN):
     # Use the UR algorithm 
     while True:
         if not allowedMoves:
-            if verbosity != "None":
+            if verbosity == "Verbose":
                 print("Game Over: No Winner")
-            if simYN and verbosity != "None":
+            if simYN and verbosity == "Verbose":
                 print("TERMINAL NODE VALUE: 0")
             return 0    #Game is over, no winner
         
@@ -48,7 +49,7 @@ def UR_Algorithm(current_player, gameBoard, verbosity, simYN):
                     print(f"FINAL Move Selected: {chosen_move + 1}")
                     print(f"Player {current_player} wins!")
                     printBoard(gameBoard)
-                if simYN and verbosity != "None":
+                if simYN and verbosity == "Verbose":
                     print(f"TERMINAL NODE VALUE: {1 if current_player == initialPlayer else -1}")
                 return 1 if current_player == initialPlayer else -1    #return 1 if original player wins, -1 if other player wins
             if verbosity == "Testing":
@@ -97,9 +98,15 @@ def PMCGS_Algorithm(current_player, gameBoard, verbosity, simulations):
             print(f"ni: {moveStats[chosen_move]['ni']}")
             print(f"Move selected: {chosen_move + 1}")
     # Select the move with the highest win rate wi/ni
-    best_move = max(moveStats, key=lambda x: (moveStats[x]["wi"] / moveStats[x]["ni"]) if moveStats[x]["ni"] > 0 else -1)
-
-    print(f"Best Move: {best_move + 1}")
+    best_move = max(moveStats, key=lambda col: (moveStats[col]["wi"] / moveStats[col]["ni"]) if moveStats[col]["ni"] > 0 else -float('inf'))
+    if verbosity != "None":
+        for col in range(7):
+            if moveStats[col]["ni"] > 0:
+                value = moveStats[col]["wi"] / moveStats[col]["ni"]
+                print(f"Column {col+1}: {value:.2f}")
+            else:
+                print(f"Column {col+1}: Null")
+        print(f"FINAL Move selected: {best_move + 1}")
     return best_move
 
 def UCT_Algorithm(current_player, gameBoard, verbosity, simulations):
@@ -154,14 +161,16 @@ def UCT_Algorithm(current_player, gameBoard, verbosity, simulations):
             print(f"ni: {moveStats[chosen_move]['ni']}")
     
     # After all simulations, select the best move based on the direct estimate (wi/ni)
-    for col in range(7):
-        if moveStats[col]["ni"] > 0:
-            value = moveStats[col]["wi"] / moveStats[col]["ni"]
-            print(f"Column {col+1}: {value:.2f}")
-        else:
-            print(f"Column {col+1}: Null")
     best_move = max(moveStats, key=lambda col: (moveStats[col]["wi"] / moveStats[col]["ni"]) if moveStats[col]["ni"] > 0 else -float('inf'))
-    print(f"FINAL Move selected: {best_move + 1}")
+
+    if verbosity != "None":
+        for col in range(7):
+            if moveStats[col]["ni"] > 0:
+                value = moveStats[col]["wi"] / moveStats[col]["ni"]
+                print(f"Column {col+1}: {value:.2f}")
+            else:
+                print(f"Column {col+1}: Null")
+        print(f"FINAL Move selected: {best_move + 1}")
     return best_move
 
 def printBoard(board):
