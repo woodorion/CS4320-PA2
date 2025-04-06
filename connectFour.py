@@ -42,9 +42,11 @@ def UR_Algorithm(current_player, gameBoard, verbosity, simYN):
         
         chosen_move = random.choice(allowedMoves) #Chooses random valid move 
 
-        #if selected column is not full (aka piece is dropped down correctly)
-        if dropPiece(gameBoard, chosen_move, current_player):
-            if winLogic(gameBoard, current_player):     #checks if there is a 4 in a row for the current player
+        #find row of the piece that was placed, will be none if invalid
+        row = dropPiece(gameBoard, chosen_move, current_player)  # Drop the piece in the chosen column
+
+        if row is not None:  # If the piece was placed successfully
+            if winLogic(gameBoard, row, chosen_move, current_player):     #checks if there is a 4 in a row for the current player
                 if verbosity != "None" and not simYN:
                     print(f"FINAL Move Selected: {chosen_move + 1}")
                     print(f"Player {current_player} wins!")
@@ -183,34 +185,50 @@ def dropPiece(board, col, symbol):
     #if valid, drops down piece to proper spot (based on board)
     #if not valid, just returns false
     #if placed in an if statement, doubles as both dropping down piece to proper place, and verifying placement validity
+    # Now returns row of the placed piece, to be used in winLogic()
 
     # Start checking from the bottom row to the top
     for row in reversed(range(6)):
         if board[row][col] == 'O':  # Check for an empty spot
             board[row][col] = symbol  # Place the piece in the lowest empty spot, simulating a "drop"
-            return True
-    return False  # Column is full
+            return row
+    return None  # Column is full
  
-def winLogic(board, symbol):
-    #checks the entire board every time for possible wins for the current player
-    #inefficient, but easier to implement than a local search, will likely optimize later
-    for row in range(6):    #check horizontal lines (L to R)
-        for col in range(4):
-            if all(board[row][col+i] == symbol for i in range(4)):
+def winLogic(board, row, col, symbol):
+    #checks around the piece placed to see if there is a 4 in a row
+    #check horizontal lines
+    count = 0
+    for c in range(max(col -3, 0), min(col + 4, 7)):    #c for column
+        count = count + 1 if board[row][c] == symbol else 0
+        if count == 4:
+            return True
+    #check vertical lines
+    count = 0 #resest count after each check
+    for r in range(max(row-3, 0), min(row + 4, 6)):   #r for row
+        count = count + 1 if board[r][col] == symbol else 0
+        if count == 4:
+            return True
+    #check diagonal lines (\)
+    count = 0
+    for d in range(-3,4):   #d for diagonal
+        r, c = row + d, col + d
+        if 0 <= r < 6 and 0 <= c < 7:
+            count = count + 1 if board[r][c] == symbol else 0
+            if count == 4:
                 return True
-    for col in range(7):    #check vertical lines (T to B)
-        for row in range(3):
-            if all(board[row + i][col] == symbol for i in range(4)):
+        else:
+            count = 0
+    #check diagonal lines (/)
+    count = 0
+    for b in range(-3,4):   #b for anti-diagonal (b => d backwards)
+        r, c = row -b, col + b
+        if 0 <= r < 6 and 0 <= c < 7:
+            count = count + 1 if board[r][c] == symbol else 0
+            if count == 4:
                 return True
-    for row in range(3,6):  #check diagonals (BL to TR)
-        for col in range (4):
-            if all(board[row - i][col + i] == symbol for i in range(4)):
-                return True
-    for row in range(3,6):  #check other diagonals (BR to TL)
-        for col in range(3,7):
-            if all(board[row - i][col - i] == symbol for i in range(4)):
-                return True
-    return False    #if none found, return false
+        else:
+            count = 0
+    return False  #if none found, return false
 
 def main():
     # Checking the command line arguments using the argv functions
