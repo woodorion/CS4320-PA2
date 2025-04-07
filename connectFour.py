@@ -6,23 +6,13 @@ import random
 import math
 
 def gameSetup(gameBoard):
-    #Checks if game is set up correctly, returns initial allowed moves if valid
     if len(gameBoard) != 6:
         raise ValueError("You need 6 rows for the board")
-    allowedMoves = []
-    try:
-        # Travel through the columns to check for allowed moves
-        allowedMoves = [col for col in range(7) if gameBoard[0][col] == 'O']    #If top row is full, column cannot be added to
-        if not allowedMoves:
-            raise ValueError("No valid moves at onset, board is already full")     #Check for errors if no allowed moves
-    except Exception as e:
-        print(f"Not able to travel through array: {e}")
-        sys.exit(1)
-    # Check for errors if there is an index issue
-    if not allowedMoves:
-        print("Index issue moves not allowed.")
-        sys.exit(1)
+    # Check the top row for empty spaces.
+    allowedMoves = [col for col in range(7) if gameBoard[0][col] == 'O']
+    # Simply return the list, even if it is empty.
     return allowedMoves
+
 
 def UR_Algorithm(current_player, gameBoard, verbosity, simYN):
     #Uniform Random Method - takes in the current player, game board, and verbosity level
@@ -230,6 +220,125 @@ def winLogic(board, row, col, symbol):
             count = 0
     return False  #if none found, return false
 
+def selectMoveUR(gameBoard, current_player):
+    """
+    A simple move selection for the Uniform Random algorithm.
+    """
+    allowedMoves = gameSetup(gameBoard)
+    return random.choice(allowedMoves)
+
+def get_move(algo, board, current_player, param, verbosity):
+    """
+    Returns a column (move) given the board state using the specified algorithm.
+    """
+    if algo == "UR":
+        return selectMoveUR(board, current_player)
+    elif algo == "PMCGS":
+        return PMCGS_Algorithm(current_player, board, verbosity, param)
+    elif algo == "UCT":
+        return UCT_Algorithm(current_player, board, verbosity, param)
+    else:
+        raise ValueError("Unknown algorithm specified.")
+
+def simulate_game(algo_row, param_row, algo_col, param_col, starting_first):
+    """
+    Simulates a full game between two move-selection algorithms.
+    
+    Parameters:
+      - algo_row, param_row: (name, simulation parameter) for the algorithm designated as the "row" entry.
+      - algo_col, param_col: for the "column" algorithm.
+      - starting_first: either "row" or "col" to determine which algorithm gets the first move.
+    
+    Returns:
+      - "row" if the algorithm designated as row wins,
+      - "col" if the column algorithm wins,
+      - "draw" if the game ends with no winner.
+    """
+    # Initialize an empty Connect Four board (6 rows x 7 columns)
+    board = [['O'] * 7 for _ in range(6)]
+    
+    # Assign symbols based on who starts first.
+    if starting_first == "row":
+        symbol_for_row = 'R'
+        symbol_for_col = 'Y'
+    else:
+        symbol_for_row = 'Y'
+        symbol_for_col = 'R'
+    
+    current_player = 'R'  # 'R' always moves first in our simulation
+    while True:
+        # Check for draw: if no allowed moves (i.e., board full)
+        if not gameSetup(board):
+            return "draw"
+        
+        if current_player == 'R':
+            # Determine which algorithm is playing as 'R'
+            if symbol_for_row == 'R':
+                move = get_move(algo_row, board, current_player, param_row, "None")
+            else:
+                move = get_move(algo_col, board, current_player, param_col, "None")
+        else:  # current_player == 'Y'
+            if symbol_for_row == 'Y':
+                move = get_move(algo_row, board, current_player, param_row, "None")
+            else:
+                move = get_move(algo_col, board, current_player, param_col, "None")
+        
+        # Place the piece and check for a win.
+        row_index = dropPiece(board, move, current_player)
+        if row_index is None:
+            # This should not happen if moves are legal.
+            return "draw"
+        if winLogic(board, row_index, move, current_player):
+            # Return who won based on the symbol.
+            if current_player == symbol_for_row:
+                return "row"
+            else:
+                return "col"
+        # Alternate player
+        current_player = 'Y' if current_player == 'R' else 'R'
+
+def tournament():
+    # Each algorithm with the number of simulation for the tournament
+    variants = [
+        ("UR", None, "UR"),
+        ("PMCGS", 5, "PMCGS(500)"),
+        ("PMCGS", 5, "PMCGS(10000)"),
+        ("UCT", 5, "UCT(500)"),
+        ("UCT", 5, "UCT(10000)")
+    ]
+    num_games = 100
+    results = [[0 for _ in range(len(variants))] for _ in range(len(variants))]
+    
+    # Run the tournament games.
+    for i, (algo_row, param_row, label_row) in enumerate(variants):
+        for j, (algo_col, param_col, label_col) in enumerate(variants):
+            row_wins = 0
+            for game in range(num_games):
+                # Alternate starting order for fairness.
+                starting_first = "row" if game % 2 == 0 else "col"
+                outcome = simulate_game(algo_row, param_row, algo_col, param_col, starting_first)
+                if outcome == "row":
+                    row_wins += 1
+            win_percentage = (row_wins / num_games) * 100
+            results[i][j] = win_percentage
+
+    # Create headers.
+    header = ["Row\\Col"] + [variant[2] for variant in variants]
+    # Determine a fixed column width based on the longest header.
+    col_width = max(len(cell) for cell in header) + 4  # add extra space for padding
+
+    # Print the header row with fixed-width columns.
+    header_line = "".join(cell.ljust(col_width) for cell in header)
+    print(header_line)
+
+    # Print each result row with the row label and aligned percentages.
+    for i, row in enumerate(results):
+        row_label = variants[i][2]
+        row_str = row_label.ljust(col_width)
+        for win_pct in row:
+            row_str += f"{win_pct:.1f}%".ljust(col_width)
+        print(row_str)
+
 def main():
     # Checking the command line arguments using the argv functions
     # to make sure there is a total of 4, nothing less and nothing more (might be worth having it have default arguements otherwise, but that's extra)
@@ -254,20 +363,22 @@ def main():
         sys.exit(1)
     
     try:
-        # Get the type of algorithm using the first line from the command line
+        # The first line specifies the mode/algorithm.
         algorithm = lines[0]
-
-        # Choose the Algorithm
-        if algorithm == "UR":
+        # If Tournament mode is specified, run the tournament.
+        if algorithm == "Tournament":
+            tournament()
+        # Otherwise, run a single move/game as before.
+        elif algorithm == "UR":
             UR_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, False)
         elif algorithm == "PMCGS":
-            PMCGS_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, algorithm_param)
+            PMCGS_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, int(algorithm_param))
         elif algorithm == "UCT":
-            UCT_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, algorithm_param)   
+            UCT_Algorithm(lines[1], [list(line) for line in lines[2:8]], verbosity, int(algorithm_param))
         else:
             raise ValueError(f"Wrong Algorithm: {algorithm}")
     except Exception as e:
-        print(f"Not reading file: {e}")
+        print(f"Error processing file: {e}")
         sys.exit(1)
     
     
