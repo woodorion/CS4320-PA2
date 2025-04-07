@@ -221,16 +221,11 @@ def winLogic(board, row, col, symbol):
     return False  #if none found, return false
 
 def selectMoveUR(gameBoard, current_player):
-    """
-    A simple move selection for the Uniform Random algorithm.
-    """
+    
     allowedMoves = gameSetup(gameBoard)
     return random.choice(allowedMoves)
 
 def get_move(algo, board, current_player, param, verbosity):
-    """
-    Returns a column (move) given the board state using the specified algorithm.
-    """
     if algo == "UR":
         return selectMoveUR(board, current_player)
     elif algo == "PMCGS":
@@ -241,19 +236,6 @@ def get_move(algo, board, current_player, param, verbosity):
         raise ValueError("Unknown algorithm specified.")
 
 def simulate_game(algo_row, param_row, algo_col, param_col, starting_first):
-    """
-    Simulates a full game between two move-selection algorithms.
-    
-    Parameters:
-      - algo_row, param_row: (name, simulation parameter) for the algorithm designated as the "row" entry.
-      - algo_col, param_col: for the "column" algorithm.
-      - starting_first: either "row" or "col" to determine which algorithm gets the first move.
-    
-    Returns:
-      - "row" if the algorithm designated as row wins,
-      - "col" if the column algorithm wins,
-      - "draw" if the game ends with no winner.
-    """
     # Initialize an empty Connect Four board (6 rows x 7 columns)
     board = [['O'] * 7 for _ in range(6)]
     
@@ -301,10 +283,10 @@ def tournament():
     # Each algorithm with the number of simulation for the tournament
     variants = [
         ("UR", None, "UR"),
-        ("PMCGS", 5, "PMCGS(500)"),
-        ("PMCGS", 5, "PMCGS(10000)"),
-        ("UCT", 5, "UCT(500)"),
-        ("UCT", 5, "UCT(10000)")
+        ("PMCGS", 500, "PMCGS(500)"),
+        ("PMCGS", 1000, "PMCGS(10000)"),
+        ("UCT", 500, "UCT(500)"),
+        ("UCT", 1000, "UCT(10000)")
     ]
     num_games = 100
     results = [[0 for _ in range(len(variants))] for _ in range(len(variants))]
